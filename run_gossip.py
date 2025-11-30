@@ -9,10 +9,7 @@ def create_gossip_network():
     """Create a network with 5 gossip agents"""
     
     print("Creating network...")
-    net = Mininet(controller=Controller)
-    
-    # Add controller
-    net.addController('c0')
+    net = Mininet()
     
     # Add switch
     s1 = net.addSwitch('s1')
