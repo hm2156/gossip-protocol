@@ -33,12 +33,12 @@ def create_gossip_network():
     print("Starting gossip agents on each host...")
     print("="*60 + "\n")
     
-    # Start agents with absolute path
-    h1.cmd(f'cd {work_dir} && python3 gossip_agent.py 10.0.0.1 5000 10.0.0.2 5000 10.0.0.3 5000 > /tmp/h1.log 2>&1 &')
-    h2.cmd(f'cd {work_dir} && python3 gossip_agent.py 10.0.0.2 5000 10.0.0.1 5000 10.0.0.3 5000 10.0.0.4 5000 > /tmp/h2.log 2>&1 &')
-    h3.cmd(f'cd {work_dir} && python3 gossip_agent.py 10.0.0.3 5000 10.0.0.1 5000 10.0.0.2 5000 10.0.0.4 5000 10.0.0.5 5000 > /tmp/h3.log 2>&1 &')
-    h4.cmd(f'cd {work_dir} && python3 gossip_agent.py 10.0.0.4 5000 10.0.0.2 5000 10.0.0.3 5000 10.0.0.5 5000 > /tmp/h4.log 2>&1 &')
-    h5.cmd(f'cd {work_dir} && python3 gossip_agent.py 10.0.0.5 5000 10.0.0.3 5000 10.0.0.4 5000 > /tmp/h5.log 2>&1 &')
+    # Use full path to python3
+    h1.cmd(f'cd {work_dir} && /usr/bin/python3 gossip_agent.py 10.0.0.1 5000 10.0.0.2 5000 10.0.0.3 5000 > /tmp/h1.log 2>&1 &')
+    h2.cmd(f'cd {work_dir} && /usr/bin/python3 gossip_agent.py 10.0.0.2 5000 10.0.0.1 5000 10.0.0.3 5000 10.0.0.4 5000 > /tmp/h2.log 2>&1 &')
+    h3.cmd(f'cd {work_dir} && /usr/bin/python3 gossip_agent.py 10.0.0.3 5000 10.0.0.1 5000 10.0.0.2 5000 10.0.0.4 5000 10.0.0.5 5000 > /tmp/h3.log 2>&1 &')
+    h4.cmd(f'cd {work_dir} && /usr/bin/python3 gossip_agent.py 10.0.0.4 5000 10.0.0.2 5000 10.0.0.3 5000 10.0.0.5 5000 > /tmp/h4.log 2>&1 &')
+    h5.cmd(f'cd {work_dir} && /usr/bin/python3 gossip_agent.py 10.0.0.5 5000 10.0.0.3 5000 10.0.0.4 5000 > /tmp/h5.log 2>&1 &')
     
     print("Agents started! Waiting for gossip to spread...")
     time.sleep(5)
@@ -49,9 +49,6 @@ def create_gossip_network():
     print("\nUseful commands:")
     print("  h1 cat /tmp/h1.log     - View h1's log")
     print("  h2 cat /tmp/h2.log     - View h2's log")
-    print("  h3 cat /tmp/h3.log     - View h3's log")
-    print("  h4 cat /tmp/h4.log     - View h4's log")
-    print("  h5 cat /tmp/h5.log     - View h5's log")
     print("  pingall                - Test connectivity")
     print("  exit                   - Stop network")
     print("\nEntering Mininet CLI...\n")
