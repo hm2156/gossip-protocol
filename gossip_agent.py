@@ -9,55 +9,64 @@ HOST_IP = sys.argv[1]
 PORT = int(sys.argv[2])
 
 known_rumors = set()
-PEERS = []  # Will be filled from command line arguments
+PEERS = []
 
+# Metrics
+message_count = 0
+rumor_received_time = {}
 
 def process_rumor(rumor_id):
-    """Process the received rumor and update the internal state"""
-    global known_rumors  # We intend to change the variable so using global is important
+    global known_rumors, message_count, rumor_received_time
+    
     if rumor_id not in known_rumors:
-        print(f"Agent {HOST_IP} received a new rumor: {rumor_id}")
+        print(f"Agent {HOST_IP} received NEW rumor: {rumor_id}")
         known_rumors.add(rumor_id)
+        rumor_received_time[rumor_id] = time.time()
+        
+        # Save to metrics file
+        with open(f'/tmp/metrics_{HOST_IP.replace(".", "_")}.txt', 'a') as f:
+            f.write(f"RECEIVED,{rumor_id},{time.time()}\n")
+        
         # Push gossip to other agents
         gossip_rumor(rumor_id)
     else:
-        print(f"Agent {HOST_IP} already received this rumor: {rumor_id}")
-
+        print(f"Agent {HOST_IP} already knows rumor: {rumor_id}")
 
 def listener_thread():
-    """Listen for incoming connections and process received rumors"""
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    # Bind to all interfaces
     server_socket.bind(('', PORT))
     server_socket.listen(5)
-    print(f"Agent {HOST_IP} on {PORT} is listening")
+    print(f"Agent {HOST_IP}:{PORT} is listening")
 
     while True:
-        # Wait for a connection from a peer
         connection, addr = server_socket.accept()
         msg = connection.recv(1024).decode()
         connection.close()
 
         if msg:
-            print(f"Agent {HOST_IP} received rumor {msg} from {addr[0]}")
+            print(f"Agent {HOST_IP} received rumor '{msg}' from {addr[0]}")
             process_rumor(msg)
 
-
 def sender_thread(target_ip, target_port, msg):
-    """Send a rumor to a target agent"""
+    global message_count
+    
     try:
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client_socket.settimeout(2)
         client_socket.connect((target_ip, target_port))
         client_socket.sendall(msg.encode())
         client_socket.close()
+        
+        message_count += 1
         print(f"Agent {HOST_IP} sent '{msg}' to {target_ip}:{target_port}")
+        
+        # Log message sent
+        with open(f'/tmp/metrics_{HOST_IP.replace(".", "_")}.txt', 'a') as f:
+            f.write(f"SENT,{msg},{target_ip},{time.time()}\n")
    
     except Exception as error:
-        # Detect churn (failure) here later
         print(f"Agent {HOST_IP} couldn't send to {target_ip}:{target_port} - {error}")
-
 
 def gossip_rumor(rumor_id):
     """Push gossip: send rumor to random subset of peers"""
@@ -72,9 +81,9 @@ def gossip_rumor(rumor_id):
         t = threading.Thread(target=sender_thread, args=(peer_ip, peer_port, rumor_id))
         t.start()
 
-        
 if __name__ == '__main__':
-    # command line arguments
+    
+    # Build peer list from command line arguments
     if len(sys.argv) > 3:
         i = 3
         while i < len(sys.argv):
@@ -89,15 +98,24 @@ if __name__ == '__main__':
     # Start listener thread
     listener = threading.Thread(target=listener_thread, daemon=True)
     listener.start()
-    time.sleep(2)  # Let listener start
+    time.sleep(2)
     
-    # If I'm the first agent (10.0.0.1), I start the rumor
-    if HOST_IP == "10.0.0.1" or HOST_IP == "127.0.0.1":
-        print("Starting first rumor...")
+    # If I'm the first agent, I start the rumor
+    if HOST_IP == "10.0.0.1":
+        print("I AM THE SEED! Starting first rumor...")
         time.sleep(1)
+        
+        # Record start time
+        with open(f'/tmp/metrics_{HOST_IP.replace(".", "_")}.txt', 'w') as f:
+            f.write(f"SEED,RUMOR_001,{time.time()}\n")
+        
         process_rumor("RUMOR_001")
+    else:
+        # Create empty metrics file
+        with open(f'/tmp/metrics_{HOST_IP.replace(".", "_")}.txt', 'w') as f:
+            f.write(f"STARTED,{time.time()}\n")
     
-    # Keep process alive
+    # Keep running
     print("Agent is running...")
     while True:
         time.sleep(1)
