@@ -6,7 +6,7 @@ import random
 import json
 
 # Available modes: 'PUSH', 'PULL', 'HYBRID'
-PROTOCOL_MODE = 'PUSH' 
+PROTOCOL_MODE = 'HYBRID' 
 PULL_INTERVAL = 5 # seconds between pull attempts (for PULL or HYBRID mode)
 FANOUT = 2 # Number of peers to push/pull from
 
