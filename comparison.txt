@@ -1,0 +1,41 @@
+======================================================================
+PROTOCOL COMPARISON - Enter Your Results
+======================================================================
+
+--- PUSH MODE (from push_results.txt) ---
+Coverage (nodes that received rumor): 3
+Total messages sent: 6
+Convergence time (seconds): 1.02
+Failed messages: 0
+
+--- PULL MODE (from pull_results.txt) ---
+Coverage (nodes that received rumor): 5
+Total messages sent: 280
+Convergence time (seconds): 10.04
+Failed messages: 0
+
+--- HYBRID MODE (from hybrid_results.txt) ---
+Coverage (nodes that received rumor): 5
+Total messages sent: 210
+Convergence time (seconds): 5.02
+Failed messages: 0
+
+======================================================================
+COMPARISON TABLE
+======================================================================
+
+Mode       Coverage     Messages     Time(s)    Reliability 
+----------------------------------------------------------------------
+PUSH       3/5       6            1.02       100.0       %
+PULL       5/5       280          10.04      100.0       %
+HYBRID     5/5       210          5.02       100.0       %
+
+======================================================================
+WINNER BY CATEGORY
+======================================================================
+
+Best Coverage: PULL (5/5)
+Fastest: PUSH (1.02s)
+Most Efficient: PUSH (6 messages)
+
+======================================================================
