@@ -74,21 +74,64 @@ def test_churn():
         size = host.cmd(f'wc -c < /tmp/{name}.log 2>/dev/null || echo "0"').strip()
         print(f"  {status} {name}.log ({size} bytes)")
     
-    time.sleep(3)  # Give agents time to start
+    print("\n--- Phase 1: Let rumor propagate (10 seconds) ---")
+    print("Waiting for rumor to start spreading from h1...")
+    time.sleep(10)  # Give rumor time to propagate to some nodes
+    
+    # Check if rumor has reached any nodes before churn
+    print("\n--- Checking rumor propagation before churn ---")
+    rumor_reached_before = {}
+    for host, name in [(h2, 'h2'), (h3, 'h3'), (h4, 'h4'), (h5, 'h5')]:
+        log_content = host.cmd('cat /tmp/churn_' + name + '.log 2>/dev/null || echo ""')
+        rumor_reached_before[name] = 'NEW RUMOR' in log_content or 'RUMOR_001' in log_content
+        status = "✓" if rumor_reached_before[name] else "✗"
+        print(f"  {status} {name} received rumor: {rumor_reached_before[name]}")
+    
     print("\n🔥 SIMULATING CHURN: Killing node h3 (central hub)")
+    print("   h3 connects to: h1, h2, h4, h5 - killing it should test resilience")
     h3.cmd("pkill -f gossip_agent.py")
     print("⚠️  Node h3 is DOWN!\n")
     
-    print("Waiting 20 seconds to see if gossip continues despite failure...")
+    print("--- Phase 2: Gossip continues after churn (20 seconds) ---")
+    print("Waiting to see if gossip continues despite h3 failure...")
     time.sleep(20)
     
     print("\n" + "="*70)
-    print("CHURN TEST COMPLETE")
+    print("CHURN TEST RESULTS")
     print("="*70)
-    print("\nCheck if rumor reached h4 and h5 despite h3 failing:")
-    print("  h4 cat /tmp/churn_h4.log")
-    print("  h5 cat /tmp/churn_h5.log")
-    print("\nLook for 'NEW RUMOR' and 'Churn detected' messages\n")
+    
+    # Automatically check results
+    print("\n--- Checking final rumor propagation ---")
+    final_results = {}
+    for host, name in [(h1, 'h1'), (h2, 'h2'), (h4, 'h4'), (h5, 'h5')]:
+        log_content = host.cmd('cat /tmp/churn_' + name + '.log 2>/dev/null || echo ""')
+        received_rumor = 'NEW RUMOR' in log_content or 'RUMOR_001' in log_content
+        final_results[name] = received_rumor
+        
+        # Check for churn detection (failed sends)
+        failed_sends = log_content.count("couldn't send") + log_content.count("Churn detected")
+        
+        status = "✓" if received_rumor else "✗"
+        churn_info = f" ({failed_sends} churn events)" if failed_sends > 0 else ""
+        print(f"  {status} {name}: {'Received rumor' if received_rumor else 'Did NOT receive rumor'}{churn_info}")
+    
+    # Summary
+    print("\n--- Test Summary ---")
+    nodes_received = sum(1 for v in final_results.values() if v)
+    total_nodes = len(final_results)
+    print(f"Nodes that received rumor: {nodes_received}/{total_nodes}")
+    
+    if nodes_received == total_nodes:
+        print("✅ SUCCESS: All remaining nodes received the rumor despite h3 failure!")
+    elif nodes_received > 0:
+        print("⚠️  PARTIAL: Some nodes received the rumor. Check connectivity.")
+    else:
+        print("❌ FAILURE: No nodes received the rumor after churn.")
+    
+    print("\n--- Manual inspection commands ---")
+    print("  h4 cat /tmp/churn_h4.log | grep -E '(NEW RUMOR|Churn detected|couldn't send)'")
+    print("  h5 cat /tmp/churn_h5.log | grep -E '(NEW RUMOR|Churn detected|couldn't send)'")
+    print("\n")
     
     CLI(net)
     net.stop()
