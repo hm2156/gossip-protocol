@@ -5,9 +5,8 @@ import time
 import random
 import json
 
-# --- Configuration (Change this to switch protocols) ---
 # Available modes: 'PUSH', 'PULL', 'HYBRID'
-PROTOCOL_MODE = 'HYBRID' 
+PROTOCOL_MODE = 'PUSH' 
 PULL_INTERVAL = 5 # seconds between pull attempts (for PULL or HYBRID mode)
 FANOUT = 2 # Number of peers to push/pull from
 
