@@ -3,8 +3,11 @@ from mininet.cli import CLI
 import time
 
 def test_churn():
-    net = Mininet()
-    net.addController('c0')
+    print("\n" + "="*70)
+    print("CHURN TEST: Simulating Node Failure During Gossip")
+    print("="*70 + "\n")
+    
+    net = Mininet(controller=None)
     
     h1 = net.addHost('h1', ip='10.0.0.1')
     h2 = net.addHost('h2', ip='10.0.0.2')
@@ -18,29 +21,32 @@ def test_churn():
         net.addLink(h, s1)
     
     net.start()
+    s1.cmd('ovs-ofctl add-flow s1 action=normal')
     
     PORT = 8000
     
-    # Start all agents
-    h1.cmd(f"python3 gossip_agent.py 10.0.0.1 {PORT} 10.0.0.2 {PORT} 10.0.0.3 {PORT} > /tmp/h1.log 2>&1 &")
-    h2.cmd(f"python3 gossip_agent.py 10.0.0.2 {PORT} 10.0.0.1 {PORT} 10.0.0.3 {PORT} 10.0.0.4 {PORT} > /tmp/h2.log 2>&1 &")
-    h3.cmd(f"python3 gossip_agent.py 10.0.0.3 {PORT} 10.0.0.1 {PORT} 10.0.0.2 {PORT} 10.0.0.4 {PORT} 10.0.0.5 {PORT} > /tmp/h3.log 2>&1 &")
-    h4.cmd(f"python3 gossip_agent.py 10.0.0.4 {PORT} 10.0.0.2 {PORT} 10.0.0.3 {PORT} 10.0.0.5 {PORT} > /tmp/h4.log 2>&1 &")
-    h5.cmd(f"python3 gossip_agent.py 10.0.0.5 {PORT} 10.0.0.3 {PORT} 10.0.0.4 {PORT} > /tmp/h5.log 2>&1 &")
+    print("Starting all agents...")
+    h1.cmd(f"/usr/bin/python3 gossip_agent.py 10.0.0.1 {PORT} 10.0.0.2 {PORT} 10.0.0.3 {PORT} > /tmp/churn_h1.log 2>&1 &")
+    h2.cmd(f"/usr/bin/python3 gossip_agent.py 10.0.0.2 {PORT} 10.0.0.1 {PORT} 10.0.0.3 {PORT} 10.0.0.4 {PORT} > /tmp/churn_h2.log 2>&1 &")
+    h3.cmd(f"/usr/bin/python3 gossip_agent.py 10.0.0.3 {PORT} 10.0.0.1 {PORT} 10.0.0.2 {PORT} 10.0.0.4 {PORT} 10.0.0.5 {PORT} > /tmp/churn_h3.log 2>&1 &")
+    h4.cmd(f"/usr/bin/python3 gossip_agent.py 10.0.0.4 {PORT} 10.0.0.2 {PORT} 10.0.0.3 {PORT} 10.0.0.5 {PORT} > /tmp/churn_h4.log 2>&1 &")
+    h5.cmd(f"/usr/bin/python3 gossip_agent.py 10.0.0.5 {PORT} 10.0.0.3 {PORT} 10.0.0.4 {PORT} > /tmp/churn_h5.log 2>&1 &")
     
-    print("\n=== All agents started ===")
     time.sleep(5)
-    
-    print("\n=== SIMULATING CHURN: Killing h3 ===")
+    print("\n🔥 SIMULATING CHURN: Killing node h3 (central hub)")
     h3.cmd("pkill -f gossip_agent.py")
+    print("⚠️  Node h3 is DOWN!\n")
     
-    print("=== Waiting to see if rumor still spreads... ===")
-    time.sleep(15)
+    print("Waiting 20 seconds to see if gossip continues despite failure...")
+    time.sleep(20)
     
-    print("\n=== Check logs to see impact of churn ===")
-    print("h1 cat /tmp/h1.log")
-    print("h2 cat /tmp/h2.log")
-    print("h4 cat /tmp/h4.log")
+    print("\n" + "="*70)
+    print("CHURN TEST COMPLETE")
+    print("="*70)
+    print("\nCheck if rumor reached h4 and h5 despite h3 failing:")
+    print("  h4 cat /tmp/churn_h4.log")
+    print("  h5 cat /tmp/churn_h5.log")
+    print("\nLook for 'NEW RUMOR' and 'Churn detected' messages\n")
     
     CLI(net)
     net.stop()
