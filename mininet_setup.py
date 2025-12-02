@@ -2,12 +2,11 @@ from mininet.net import Mininet
 from mininet.cli import CLI
 
 def start_gossip_network():
-    net = Mininet() 
+    # NO CONTROLLER
+    net = Mininet(controller=None) 
 
-    print("--- 1. Creating Controller, Hosts, and Switch ---")
-    net.addController('c0')
+    print("--- 1. Creating Hosts and Switch ---")
     
-    # Add 5 Hosts
     h1 = net.addHost('h1', ip='10.0.0.1')
     h2 = net.addHost('h2', ip='10.0.0.2')
     h3 = net.addHost('h3', ip='10.0.0.3')
@@ -25,21 +24,20 @@ def start_gossip_network():
 
     print("--- 3. Starting Network ---")
     net.start()
+    
+    # Configure switch to forward all traffic
+    s1.cmd('ovs-ofctl add-flow s1 action=normal')
 
     PORT = 8000
     
-    print("--- 4. Launching Agents on Hosts ---")
+    print("--- 4. Launching Agents ---")
     h1.cmd(f"python3 gossip_agent.py 10.0.0.1 {PORT} 10.0.0.2 {PORT} 10.0.0.3 {PORT} > /tmp/h1.log 2>&1 &")
     h2.cmd(f"python3 gossip_agent.py 10.0.0.2 {PORT} 10.0.0.1 {PORT} 10.0.0.3 {PORT} 10.0.0.4 {PORT} > /tmp/h2.log 2>&1 &")
     h3.cmd(f"python3 gossip_agent.py 10.0.0.3 {PORT} 10.0.0.1 {PORT} 10.0.0.2 {PORT} 10.0.0.4 {PORT} 10.0.0.5 {PORT} > /tmp/h3.log 2>&1 &")
     h4.cmd(f"python3 gossip_agent.py 10.0.0.4 {PORT} 10.0.0.2 {PORT} 10.0.0.3 {PORT} 10.0.0.5 {PORT} > /tmp/h4.log 2>&1 &")
     h5.cmd(f"python3 gossip_agent.py 10.0.0.5 {PORT} 10.0.0.3 {PORT} 10.0.0.4 {PORT} > /tmp/h5.log 2>&1 &")
 
-    print("\n--- 5 Node Network Running ---")
-    print("Commands:")
-    print("  h1 cat /tmp/h1.log - View logs")
-    print("  pingall - Test connectivity")
-    print("  exit - Stop network\n")
+    print("\n=== WAIT 30 SECONDS, then type 'exit' ===\n")
     
     CLI(net)
     net.stop()
