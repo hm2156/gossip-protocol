@@ -41,9 +41,9 @@ def compare_protocols():
     best_time = min(results.items(), key=lambda x: x[1]['time'])
     best_msg = min(results.items(), key=lambda x: x[1]['messages'])
     
-    print(f"\n🏆 Best Coverage: {best_cov[0]} ({best_cov[1]['coverage']}/5)")
-    print(f"🏆 Fastest: {best_time[0]} ({best_time[1]['time']:.2f}s)")
-    print(f"🏆 Most Efficient: {best_msg[0]} ({best_msg[1]['messages']} messages)")
+    print(f"\nBest Coverage: {best_cov[0]} ({best_cov[1]['coverage']}/5)")
+    print(f"Fastest: {best_time[0]} ({best_time[1]['time']:.2f}s)")
+    print(f"Most Efficient: {best_msg[0]} ({best_msg[1]['messages']} messages)")
     
     print("\n" + "="*70 + "\n")
 

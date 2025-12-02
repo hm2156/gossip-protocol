@@ -7,14 +7,12 @@ def extract_from_log(log_file):
         with open(log_file, 'r') as f:
             content = f.read()
         
-        # Check if node received rumor
+        
         received = 'NEW RUMOR' in content
         
-        # Extract time if received
         time_match = re.search(r'Time: ([\d.]+)s', content)
         receive_time = float(time_match.group(1)) if time_match else None
         
-        # Extract last metrics line
         metrics_lines = re.findall(r'Sent: (\d+), Failed: (\d+)', content)
         if metrics_lines:
             last_sent, last_failed = metrics_lines[-1]
@@ -47,16 +45,13 @@ def analyze_experiment():
         print(f"Reading {log_file}...")
         results[node] = extract_from_log(log_file)
     
-    # Calculate totals
     coverage = sum(1 for r in results.values() if r['received'])
     total_sent = sum(r['sent'] for r in results.values())
     total_failed = sum(r['failed'] for r in results.values())
     
-    # Find max convergence time
     times = [r['time'] for r in results.values() if r['time'] is not None]
     max_time = max(times) if times else 0
     
-    # Display results
     print("\n" + "="*60)
     print("RESULTS")
     print("="*60)
@@ -78,7 +73,6 @@ def analyze_experiment():
     
     print("\n" + "="*60)
     
-    # Save for later comparison
     return {
         'coverage': coverage,
         'total_messages': total_sent,
