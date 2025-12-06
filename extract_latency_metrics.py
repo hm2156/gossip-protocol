@@ -1,9 +1,9 @@
 import re
+from mininet.net import Mininet
 
-def analyze_latency():
-    print("\n" + "="*60)
-    print("LATENCY TEST RESULTS")
-    print("="*60 + "\n")
+def analyze_latency(net):
+    """Analyze latency test results from Mininet network"""
+    print("LATENCY TEST RESULTS\n")
     
     nodes = {
         'h1': {'delay': '50ms', 'loss': '0%'},
@@ -15,36 +15,31 @@ def analyze_latency():
     
     results = {}
     
-    for node in nodes.keys():
-        log_file = f'/tmp/lat_{node}.log'
-        try:
-            with open(log_file, 'r') as f:
-                content = f.read()
-            
-            received = 'NEW RUMOR' in content
-            time_match = re.search(r'Time: ([\d.]+)s', content)
-            receive_time = float(time_match.group(1)) if time_match else None
-            
-            metrics_lines = re.findall(r'Sent: (\d+), Failed: (\d+)', content)
-            if metrics_lines:
-                sent, failed = metrics_lines[-1]
-                sent = int(sent)
-                failed = int(failed)
-            else:
-                sent = 0
-                failed = 0
-            
-            results[node] = {
-                'received': received,
-                'time': receive_time,
-                'sent': sent,
-                'failed': failed,
-                'delay': nodes[node]['delay'],
-                'loss': nodes[node]['loss']
-            }
-        except FileNotFoundError:
-            results[node] = {'received': False, 'time': None, 'sent': 0, 'failed': 0, 
-                           'delay': nodes[node]['delay'], 'loss': nodes[node]['loss']}
+    for node_name in nodes.keys():
+        host = net.get(node_name)
+        log_content = host.cmd('cat /tmp/lat_' + node_name + '.log 2>/dev/null || echo ""')
+        
+        received = 'NEW RUMOR' in log_content or 'RUMOR_001' in log_content
+        time_match = re.search(r'Time: ([\d.]+)s', log_content)
+        receive_time = float(time_match.group(1)) if time_match else None
+        
+        metrics_lines = re.findall(r'Sent: (\d+), Failed: (\d+)', log_content)
+        if metrics_lines:
+            sent, failed = metrics_lines[-1]
+            sent = int(sent)
+            failed = int(failed)
+        else:
+            sent = 0
+            failed = 0
+        
+        results[node_name] = {
+            'received': received,
+            'time': receive_time,
+            'sent': sent,
+            'failed': failed,
+            'delay': nodes[node_name]['delay'],
+            'loss': nodes[node_name]['loss']
+        }
     
     print(f"{'Node':<6} {'Delay':<10} {'Loss':<8} {'Received':<12} {'Time(s)':<10} {'Sent':<8} {'Failed':<8}")
     print("-" * 70)
@@ -70,8 +65,11 @@ def analyze_latency():
     
     if results['h3']['time']:
         print(f"  → h3 received at: {results['h3']['time']:.2f}s (delayed by network latency)")
-    
-    print("\n" + "="*60 + "\n")
+    print()
 
 if __name__ == '__main__':
-    analyze_latency()
+    # This can be run from Mininet CLI using: py extract_latency_metrics.py
+    # But it needs the net object, so it's better to call it from test_latency.py
+    print("This script should be called from test_latency.py or from Mininet CLI")
+    print("To use from Mininet CLI: py extract_latency_metrics.py")
+    print("Or import and call: from extract_latency_metrics import analyze_latency; analyze_latency(net)")
