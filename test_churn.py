@@ -55,19 +55,14 @@ def test_churn():
     print("Phase 2: Observing gossip after churn (20 seconds)...")
     time.sleep(20)
     
-    print("\nResults:")
-    final_results = {}
-    for host, name in [(h1, 'h1'), (h2, 'h2'), (h4, 'h4'), (h5, 'h5')]:
-        log_content = host.cmd('cat /tmp/churn_' + name + '.log 2>/dev/null || echo ""')
-        received_rumor = 'NEW RUMOR' in log_content or 'RUMOR_001' in log_content
-        final_results[name] = received_rumor
-        failed_sends = log_content.count("couldn't send") + log_content.count("Churn detected")
-        status = "✓" if received_rumor else "✗"
-        churn_info = f" ({failed_sends} failures)" if failed_sends > 0 else ""
-        print(f"  {status} {name}: {'Received' if received_rumor else 'Not received'}{churn_info}")
-    
-    nodes_received = sum(1 for v in final_results.values() if v)
-    total_nodes = len(final_results)
+    # Copy log files from hosts to main filesystem for analysis
+    print("\nCopying log files from hosts to main filesystem...")
+    for i in range(1, 6):
+        host = net.get(f'h{i}')
+        log_content = host.cmd('cat /tmp/churn_h' + str(i) + '.log 2>/dev/null || echo ""')
+        # Write to main filesystem /tmp so extract script can read it
+        with open(f'/tmp/churn_h{i}.log', 'w') as f:
+            f.write(log_content)
     
     print(f"\nSummary: {nodes_received}/{total_nodes} nodes received rumor")
     if nodes_received == total_nodes:
