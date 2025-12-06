@@ -1,0 +1,18 @@
+LATENCY TEST RESULTS
+
+Node   Delay      Loss     Received     Time(s)    Sent     Failed  
+----------------------------------------------------------------------
+h1     50ms       0%       ✓ Yes        1.00       77       0       
+h2     10ms       0%       ✓ Yes        1.26       101      0       
+h3     100ms      2%       ✓ Yes        1.48       129      0       
+h4     20ms       0%       ✓ Yes        5.18       108      0       
+h5     5ms        0%       ✓ Yes        5.36       75       0       
+----------------------------------------------------------------------
+
+Coverage: 5/5 nodes (100%)
+Total Messages Sent: 490
+Total Failed: 0
+Convergence Time: 5.36s
+High-latency node (h3, 100ms) received: ✓ Yes
+  → h3 received at: 1.48s (delayed by network latency)
+
