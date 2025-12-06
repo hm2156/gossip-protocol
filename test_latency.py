@@ -1,17 +1,19 @@
-import os
-import time
 from mininet.net import Mininet
 from mininet.cli import CLI
-from mininet.link import TCLink 
+import time
+import os
 
 def test_latency_variation():
     print("\n" + "="*70)
-    print("LATENCY TEST: Asymmetric Network Delays")
+    print("LATENCY TEST: Testing gossip with network delays")
     print("="*70 + "\n")
+
+    # Get current directory
+    work_dir = os.getcwd()
+    print(f"Working directory: {work_dir}\n")
 
     net = Mininet(controller=None) 
 
-    # Add Hosts and Switch
     h1 = net.addHost('h1', ip='10.0.0.1')
     h2 = net.addHost('h2', ip='10.0.0.2')
     h3 = net.addHost('h3', ip='10.0.0.3')
@@ -19,26 +21,28 @@ def test_latency_variation():
     h5 = net.addHost('h5', ip='10.0.0.5')
     s1 = net.addSwitch('s1')
 
-    # Links with Different Delays (simulating geographic distance)
-    print("Setting up network with delays:")
-    print("  h1: 50ms (moderate)")
-    print("  h2: 10ms (low)")
-    print("  h3: 100ms + 2% loss (high latency)")
-    print("  h4: 20ms (medium)")
-    print("  h5: 5ms (very low)\n")
-    
-    net.addLink(h1, s1, cls=TCLink, delay='50ms', loss=0) 
-    net.addLink(h2, s1, cls=TCLink, delay='10ms', loss=0) 
-    net.addLink(h3, s1, cls=TCLink, delay='100ms', loss=2) 
-    net.addLink(h4, s1, cls=TCLink, delay='20ms', loss=0) 
-    net.addLink(h5, s1, cls=TCLink, delay='5ms', loss=0)  
+    net.addLink(h1, s1)
+    net.addLink(h2, s1)
+    net.addLink(h3, s1)
+    net.addLink(h4, s1)
+    net.addLink(h5, s1)
 
     net.start()
     s1.cmd('ovs-ofctl add-flow s1 action=normal')
     
+    print("Adding network delays with tc...")
+    h1.cmd('tc qdisc add dev h1-eth0 root netem delay 50ms')
+    h2.cmd('tc qdisc add dev h2-eth0 root netem delay 10ms')
+    h3.cmd('tc qdisc add dev h3-eth0 root netem delay 100ms loss 2%')
+    h4.cmd('tc qdisc add dev h4-eth0 root netem delay 20ms')
+    h5.cmd('tc qdisc add dev h5-eth0 root netem delay 5ms')
+    
+    print("Delays configured:")
+    print("  h1: 50ms, h2: 10ms, h3: 100ms+2%loss, h4: 20ms, h5: 5ms\n")
+    
     PORT = 8000
     
-    # Get current protocol mode from gossip_agent.py
+    # Get protocol mode
     with open('gossip_agent.py', 'r') as f:
         for line in f:
             if 'PROTOCOL_MODE =' in line:
@@ -47,23 +51,27 @@ def test_latency_variation():
     
     print(f"Starting agents in {mode} mode...\n")
     
-    # Launch agents
-    h1.cmd(f"/usr/bin/python3 gossip_agent.py 10.0.0.1 {PORT} 10.0.0.2 {PORT} 10.0.0.3 {PORT} > /tmp/latency_h1.log 2>&1 &")
-    h2.cmd(f"/usr/bin/python3 gossip_agent.py 10.0.0.2 {PORT} 10.0.0.1 {PORT} 10.0.0.3 {PORT} 10.0.0.4 {PORT} > /tmp/latency_h2.log 2>&1 &")
-    h3.cmd(f"/usr/bin/python3 gossip_agent.py 10.0.0.3 {PORT} 10.0.0.1 {PORT} 10.0.0.2 {PORT} 10.0.0.4 {PORT} 10.0.0.5 {PORT} > /tmp/latency_h3.log 2>&1 &")
-    h4.cmd(f"/usr/bin/python3 gossip_agent.py 10.0.0.4 {PORT} 10.0.0.2 {PORT} 10.0.0.3 {PORT} 10.0.0.5 {PORT} > /tmp/latency_h4.log 2>&1 &")
-    h5.cmd(f"/usr/bin/python3 gossip_agent.py 10.0.0.5 {PORT} 10.0.0.3 {PORT} 10.0.0.4 {PORT} > /tmp/latency_h5.log 2>&1 &")
+    # Launch with FULL PATHS
+    h1.cmd(f"cd {work_dir} && /usr/bin/python3 {work_dir}/gossip_agent.py 10.0.0.1 {PORT} 10.0.0.2 {PORT} 10.0.0.3 {PORT} > /tmp/lat_h1.log 2>&1 &")
+    h2.cmd(f"cd {work_dir} && /usr/bin/python3 {work_dir}/gossip_agent.py 10.0.0.2 {PORT} 10.0.0.1 {PORT} 10.0.0.3 {PORT} 10.0.0.4 {PORT} > /tmp/lat_h2.log 2>&1 &")
+    h3.cmd(f"cd {work_dir} && /usr/bin/python3 {work_dir}/gossip_agent.py 10.0.0.3 {PORT} 10.0.0.1 {PORT} 10.0.0.2 {PORT} 10.0.0.4 {PORT} 10.0.0.5 {PORT} > /tmp/lat_h3.log 2>&1 &")
+    h4.cmd(f"cd {work_dir} && /usr/bin/python3 {work_dir}/gossip_agent.py 10.0.0.4 {PORT} 10.0.0.2 {PORT} 10.0.0.3 {PORT} 10.0.0.5 {PORT} > /tmp/lat_h4.log 2>&1 &")
+    h5.cmd(f"cd {work_dir} && /usr/bin/python3 {work_dir}/gossip_agent.py 10.0.0.5 {PORT} 10.0.0.3 {PORT} 10.0.0.4 {PORT} > /tmp/lat_h5.log 2>&1 &")
     
-    print("Agents running. Waiting 45 seconds for gossip with latency...\n")
-    time.sleep(45)
+    time.sleep(5)
+    
+    print("Checking logs (first 3 lines):")
+    for i in range(1, 6):
+        print(f"\n--- h{i} ---")
+        result = net.get(f'h{i}').cmd(f'head -3 /tmp/lat_h{i}.log')
+        print(result if result.strip() else "  (empty or not started)")
+    
+    print("\nWaiting 60 seconds for gossip...\n")
+    time.sleep(60)
     
     print("="*70)
     print(f"LATENCY TEST COMPLETE ({mode} mode)")
     print("="*70)
-    print("\nCheck results:")
-    print("  h1 cat /tmp/latency_h1.log")
-    print("  h3 cat /tmp/latency_h3.log (high latency + loss)")
-    print("\nRun: python3 extract_latency_metrics.py\n")
     
     CLI(net)
     net.stop()
