@@ -64,6 +64,16 @@ def test_churn():
         with open(f'/tmp/churn_h{i}.log', 'w') as f:
             f.write(log_content)
     
+    # Quick summary (excluding h3 which was killed)
+    final_results = {}
+    for host, name in [(h1, 'h1'), (h2, 'h2'), (h4, 'h4'), (h5, 'h5')]:
+        log_content = host.cmd('cat /tmp/churn_' + name + '.log 2>/dev/null || echo ""')
+        received_rumor = 'NEW RUMOR' in log_content or 'RUMOR_001' in log_content
+        final_results[name] = received_rumor
+    
+    nodes_received = sum(1 for v in final_results.values() if v)
+    total_nodes = len(final_results)
+    
     print(f"\nSummary: {nodes_received}/{total_nodes} nodes received rumor")
     if nodes_received == total_nodes:
         print("SUCCESS: All nodes received rumor despite h3 failure")
@@ -71,7 +81,7 @@ def test_churn():
         print("PARTIAL: Some nodes received rumor")
     else:
         print("FAILURE: No nodes received rumor")
-    print()
+    print("Run: python3 extract_churn_metrics.py > churn_results.txt\n")
     
     CLI(net)
     net.stop()
