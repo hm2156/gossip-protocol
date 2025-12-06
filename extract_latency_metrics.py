@@ -1,8 +1,8 @@
 import re
-from mininet.net import Mininet
+import os
 
-def analyze_latency(net):
-    """Analyze latency test results from Mininet network"""
+def analyze_latency():
+    """Analyze latency test results from log files"""
     print("LATENCY TEST RESULTS\n")
     
     nodes = {
@@ -16,8 +16,12 @@ def analyze_latency(net):
     results = {}
     
     for node_name in nodes.keys():
-        host = net.get(node_name)
-        log_content = host.cmd('cat /tmp/lat_' + node_name + '.log 2>/dev/null || echo ""')
+        log_file = f'/tmp/lat_{node_name}.log'
+        try:
+            with open(log_file, 'r') as f:
+                log_content = f.read()
+        except FileNotFoundError:
+            log_content = ""
         
         received = 'NEW RUMOR' in log_content or 'RUMOR_001' in log_content
         time_match = re.search(r'Time: ([\d.]+)s', log_content)
@@ -68,8 +72,4 @@ def analyze_latency(net):
     print()
 
 if __name__ == '__main__':
-    # This can be run from Mininet CLI using: py extract_latency_metrics.py
-    # But it needs the net object, so it's better to call it from test_latency.py
-    print("This script should be called from test_latency.py or from Mininet CLI")
-    print("To use from Mininet CLI: py extract_latency_metrics.py")
-    print("Or import and call: from extract_latency_metrics import analyze_latency; analyze_latency(net)")
+    analyze_latency()
