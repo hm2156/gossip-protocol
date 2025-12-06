@@ -1,0 +1,19 @@
+CHURN TEST RESULTS
+
+Node   Status       Received     Time(s)    Sent     Failed   Churn Events
+--------------------------------------------------------------------------------
+h1     ALIVE        ✓ Yes        1.00       7        0        0           
+h2     ALIVE        ✓ Yes        5.01       9        0        0           
+h3     KILLED       ✓ Yes        5.08       11       0        0           
+h4     ALIVE        ✓ Yes        10.09      7        0        0           
+h5     ALIVE        ✓ Yes        5.02       6        0        0           
+--------------------------------------------------------------------------------
+
+Remaining Nodes (after h3 failure): 4
+Coverage: 4/4 nodes received rumor (100%)
+Total Messages: 29 sent, 0 failed
+Total Churn Events: 0
+Convergence Time: 10.09s
+SUCCESS: All remaining nodes received rumor despite h3 failure
+Nodes that received rumor: h1, h2, h4, h5
+
